@@ -182,7 +182,7 @@ Finally, right-click the project and select `Build`. At this point, It will take
 
 ## Step 8 - Add Micro-ROS Code to main.c
 ### 1. Include Libraries
-```bash
+```c
 /* USER CODE BEGIN Includes */
 #include <rcl/rcl.h>
 #include <rcl/error_handling.h>
@@ -197,7 +197,7 @@ Finally, right-click the project and select `Build`. At this point, It will take
 ```
 
 ### 2. Create Functions
-```bash
+```c
 /* USER CODE BEGIN 4 */
 bool cubemx_transport_open(struct uxrCustomTransport * transport);
 bool cubemx_transport_close(struct uxrCustomTransport * transport);
@@ -213,7 +213,7 @@ void * microros_zero_allocate(size_t number_of_elements, size_t size_of_element,
 
 ### 3. Edit DefaultTask
 Replace `huart3` with the UART port that you are using:
-```bash
+```c
 void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN 5 */
