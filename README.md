@@ -9,10 +9,8 @@ Before starting, make sure you have the following:
 - Docker installed
 - A USB cable to connect the Nucleo board to your computer
 - Nucleo Board
-## Tested Board
-The following board has been confirmed to work with Micro-ROS and ROS 2:
-- Nucleo-F411RE
-- Nucleo-L432KC
+## About choosing UART
+To choose the correct UART port, you need to identify which port the microcontroller uses to connect to your computer. You can search for your specific board's datasheet by entering "Your Board Datasheet" on Google. For more detailed information, visit [STMicroelectronics' website](www.st.com) and refer to the user manual document.
 ## Step 1 - Install ROS 2
 To get started, you'll need to install ROS 2 on your system. For this guide, we are using the ROS 2 Humble distribution.
 
@@ -128,7 +126,6 @@ Complete the project name then click `Finish`
 - System Core
     - RCC
         - `HSE: Cystal/Ceramic Resonator`
-- System Core
     - SYS
         - `Timebase Source: TIM1`
 - Connectivity
@@ -142,6 +139,7 @@ Complete the project name then click `Finish`
         - Double click `defaultTask`
             - `Stack Size (Words): 3000`
         - Make sure micro-ROS task has more than 10 kB of stack (1 Word = 4 Bytes)!
+
 Click `Device Configuration Tool Code Generation` or `Gear Icon`
 ## Step 6 - Clone micro_ros_stm32cubemx_utils
 Go to the your project folder in workspace, and then open terminal
@@ -159,9 +157,9 @@ In the `microros_transport` directory, delete all files except for `dma_transpor
 
 - Navigate to `Project -> Settings -> C/C++ Build -> Settings -> Build Steps Tab `
     - In `Pre-build steps` add:
-```bash
-docker pull microros/micro_ros_static_library_builder:humble && docker run --rm -v ${workspace_loc:/${ProjName}}:/project --env MICROROS_LIBRARY_FOLDER=micro_ros_stm32cubemx_utils/microros_static_library_ide microros/micro_ros_static_library_builder:humble
-```
+    ```bash
+    docker pull microros/micro_ros_static_library_builder:humble && docker run --rm -v ${workspace_loc:/${ProjName}}:/project --env MICROROS_LIBRARY_FOLDER=micro_ros_stm32cubemx_utils/microros_static_library_ide microros/micro_ros_static_library_builder:humble
+    ```
 
 - Navigate to `Project -> Settings -> C/C++ Build -> Settings -> Tool Settings Tab -> MCU/MPU GCC Compiler -> Include paths`
 ```bash
@@ -307,6 +305,8 @@ ros2 topic list
 ```
 
 If you see `/cubemx_publisher` in the list, congratulations! You have successfully installed Micro-ROS on the Nucleo board.
+
+If nothing appear, press the reset button.
 ## Documentation
 
 ### GitHub Repositories:
