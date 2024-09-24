@@ -279,14 +279,17 @@ void StartDefaultTask(void *argument)
   /* USER CODE END 5 */
 }
 ```
+
+### Additional
+If you want to reconnect to your board, you can add:
+```c
+if (ret != RCL_RET_OK)
+{
+    printf("Error publishing (line %d)\n", __LINE__);
+    NVIC_SystemReset();
+}
+```
 Then, click `Run` to upload the code to the Nucleo board.
-
-
-
-
-
-
-
 
 ## Step 9 - Running Micro-ROS
 Grant permission to Docker:
