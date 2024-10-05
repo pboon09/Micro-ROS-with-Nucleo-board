@@ -129,7 +129,7 @@ Complete the project name then click `Finish`
     - SYS
         - `Timebase Source: TIM1`
 - Connectivity
-    - USART2
+    - USART2 (Choose preferable baudrate)
         - In DMA Settings tab, click Add
             - Add RX - `Mode: Circular` `Priority: Very High`
             - Add TX - `Priority: Very High`
