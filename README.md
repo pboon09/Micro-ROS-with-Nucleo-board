@@ -129,13 +129,13 @@ Complete the project name then click `Finish`
     - SYS
         - `Timebase Source: TIM1`
 - Connectivity
-    - USART2 (Choose preferable baudrate)
+    - USART2 (Choose preferable baudrate) `Asynchronous`
         - In DMA Settings tab, click Add
             - Add RX - `Mode: Circular` `Priority: Very High`
             - Add TX - `Priority: Very High`
         - In NVIC Settings tab, click enable `UART2 global interrupt`
 - Middleware
-    - FREERTOS
+    - FREERTOS `CMSIS_V2`
         - Double click `defaultTask`
             - `Stack Size (Words): 3000`
         - Make sure micro-ROS task has more than 10 kB of stack (1 Word = 4 Bytes)!
