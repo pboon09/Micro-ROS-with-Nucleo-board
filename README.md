@@ -365,11 +365,16 @@ Check if the agent is running successfully:
 ros2 topic list
 ```
 
-If you see `/cubemx_publisher` in the list, congratulations! You have successfully installed Micro-ROS on the Nucleo board.
+If you see `/uros_motor_node` in the list, congratulations! You have successfully installed Micro-ROS on the Nucleo board.
 
 If nothing appear, press the reset button.
-## Documentation
 
+## Extra
+For custom interface, please follow step to create one in [official page](https://docs.ros.org/en/humble/Tutorials/Beginner-Client-Libraries/Custom-ROS2-Interfaces.html) 
+Once created, copy the entire custom interface package directory into `micro_ros_stm32cubemx_utils/microros_static_library_ide/library_generation/extra_packages`
+Remove the current libmicroros folder to force regeneration `micro_ros_stm32cubemx_utils/microros_static_library_ide/libmicroros/` and rebuild
+
+## Documentation
 ### GitHub Repositories:
 - [micro_ros_setup - Humble](https://github.com/micro-ROS/micro_ros_setup/tree/humble)
 - [micro_ros_stm32cubemx_utils - Humble](https://github.com/micro-ROS/micro_ros_stm32cubemx_utils/tree/humble)
