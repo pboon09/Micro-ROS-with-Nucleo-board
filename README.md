@@ -313,7 +313,7 @@ void StartDefaultTask(void *argument) {
 
 	//create executor
 	executor = rclc_executor_get_zero_initialized_executor();
-	rclc_executor_init(&executor, &support.context, 2, &allocator); // total number of handles = #subscriptions + #timers
+	rclc_executor_init(&executor, &support.context, 2, &allocator); // total number of handles = #subscriptions + #timers + #clients + #service (Should not handle too much)
 	rclc_executor_add_timer(&executor, &timer);
 	rclc_executor_add_subscription(&executor, &subscriber, &sub_msg,
 			&subscription_callback, ON_NEW_DATA);
