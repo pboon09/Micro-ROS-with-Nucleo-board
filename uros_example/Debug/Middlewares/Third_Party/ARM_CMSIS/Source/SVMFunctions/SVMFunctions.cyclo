@@ -1,0 +1,9 @@
+../Middlewares/Third_Party/ARM_CMSIS/Include/dsp/svm_functions.h:64:27:arm_exponent_f32	2
+/home/transporter/Micro-ROS-with-Nucleo-board/uros_example/Source/SVMFunctions/arm_svm_linear_init_f32.c:71:24:arm_svm_linear_init_f32	1
+/home/transporter/Micro-ROS-with-Nucleo-board/uros_example/Source/SVMFunctions/arm_svm_linear_predict_f32.c:434:24:arm_svm_linear_predict_f32	3
+/home/transporter/Micro-ROS-with-Nucleo-board/uros_example/Source/SVMFunctions/arm_svm_polynomial_init_f32.c:69:24:arm_svm_polynomial_init_f32	1
+/home/transporter/Micro-ROS-with-Nucleo-board/uros_example/Source/SVMFunctions/arm_svm_polynomial_predict_f32.c:461:24:arm_svm_polynomial_predict_f32	3
+/home/transporter/Micro-ROS-with-Nucleo-board/uros_example/Source/SVMFunctions/arm_svm_rbf_init_f32.c:67:24:arm_svm_rbf_init_f32	1
+/home/transporter/Micro-ROS-with-Nucleo-board/uros_example/Source/SVMFunctions/arm_svm_rbf_predict_f32.c:494:24:arm_svm_rbf_predict_f32	3
+/home/transporter/Micro-ROS-with-Nucleo-board/uros_example/Source/SVMFunctions/arm_svm_sigmoid_init_f32.c:67:24:arm_svm_sigmoid_init_f32	1
+/home/transporter/Micro-ROS-with-Nucleo-board/uros_example/Source/SVMFunctions/arm_svm_sigmoid_predict_f32.c:459:24:arm_svm_sigmoid_predict_f32	3
