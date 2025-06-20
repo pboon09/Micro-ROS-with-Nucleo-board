@@ -1,5 +1,35 @@
 # Micro-ROS-with-Nucleo-board
 This project provides a complete guide to setting up Micro-ROS on a Nucleo board. It walks through the steps required to get started, from installing necessary tools to running your first Micro-ROS application.
+
+## Table of Contents
+- [Micro-ROS-with-Nucleo-board](#micro-ros-with-nucleo-board)
+	- [Table of Contents](#table-of-contents)
+	- [Requirement](#requirement)
+	- [About choosing UART](#about-choosing-uart)
+	- [Step 1 - Install ROS 2](#step-1---install-ros-2)
+	- [Step 2 - Install Micro-ROS](#step-2---install-micro-ros)
+	- [Step 3 - Download STM32CubeIDE](#step-3---download-stm32cubeide)
+	- [Step 4 - Download Docker](#step-4---download-docker)
+	- [Step 5 - IOC Setup](#step-5---ioc-setup)
+		- [1. Create STM32 Project](#1-create-stm32-project)
+		- [2. Setting IOC](#2-setting-ioc)
+	- [Step 6 - Clone micro\_ros\_stm32cubemx\_utils](#step-6---clone-micro_ros_stm32cubemx_utils)
+	- [Step 7 - CMSIS](#step-7---cmsis)
+	- [Step 8 - About Git](#step-8---about-git)
+	- [Step 9 - Setting Project's Properties](#step-9---setting-projects-properties)
+	- [Step 10 - Add Micro-ROS Code to main.c](#step-10---add-micro-ros-code-to-mainc)
+		- [1. Include Libraries](#1-include-libraries)
+		- [2. Create Variable](#2-create-variable)
+		- [3. Create Functions](#3-create-functions)
+		- [4. Add Micro-ROS Codew](#4-add-micro-ros-codew)
+	- [Step 11 - Running Micro-ROS](#step-11---running-micro-ros)
+	- [Extra](#extra)
+	- [Documentation](#documentation)
+		- [GitHub Repositories:](#github-repositories)
+		- [Installations:](#installations)
+		- [Special Thanks:](#special-thanks)
+	- [Feedback](#feedback)
+
 ## Requirement
 Before starting, make sure you have the following:
 - A computer with Ubuntu 22.04.4 LTS
@@ -9,8 +39,10 @@ Before starting, make sure you have the following:
 - Docker installed
 - A USB cable to connect the Nucleo board to your computer
 - Nucleo Board
+
 ## About choosing UART
 To choose the correct UART port, you need to identify which port the microcontroller uses to connect to your computer. You can search for your specific board's datasheet by entering "Your Board Datasheet" on Google. For more detailed information, visit [STMicroelectronics' website](www.st.com) and refer to the user manual document.
+
 ## Step 1 - Install ROS 2
 To get started, you'll need to install ROS 2 on your system. For this guide, we are using the ROS 2 Humble distribution. Follow the official ROS 2 installation guide for Ubuntu by clicking [here](https://docs.ros.org/en/humble/Installation/Ubuntu-Install-Debs.html).
 
@@ -114,13 +146,29 @@ Next, copy the content from the `extra_sources` folder and paste it into the `co
 
 In the `microros_transport` directory, delete all files except for `dma_transport.c`.
 
-## Step 7 - Setting Project's Properties
+## Step 7 - CMSIS
+If you plan to use CMSIS in your project, please refer to the provided manual and example files in the `CMSIS` folder. These resources will help you integrate CMSIS correctly into your development workflow.
+
+## Step 8 - About Git
+Inside your STM32 project, you can ignore the `Debug` and `Release` folders by excluding them from version control.
+
+If you want to push the `micro_ros_stm32cubemx_utils` folder to your own repository, we recommend removing its existing Git history using:
+```bash
+rm -rf .git*
+```
+
+## Step 9 - Setting Project's Properties
 
 - Navigate to `Project -> Settings -> C/C++ Build -> Settings -> Build Steps Tab `
     - In `Pre-build steps` add:
     ```bash
-        echo "<your password>" | sudo -S docker pull microros/micro_ros_static_library_builder:humble && echo "<your password>" | sudo -S docker run --rm -v ${workspace_loc:/${ProjName}}:/project --env MICROROS_LIBRARY_FOLDER=micro_ros_stm32cubemx_utils/microros_static_library_ide microros/micro_ros_static_library_builder:humble
+	echo "<your password>" | sudo -S docker pull microros/micro_ros_static_library_builder:humble && echo "<your password>" | sudo -S docker run --rm -v ${workspace_loc:/${ProjName}}:/project --env MICROROS_LIBRARY_FOLDER=micro_ros_stm32cubemx_utils/microros_static_library_ide microros/micro_ros_static_library_builder:humble
     ```
+	- or we can add this simplify version:
+    ```bash
+	echo "<your password>" | sudo -S bash -c 'docker pull microros/micro_ros_static_library_builder:humble && docker run --rm -v /home/transporter/Micro-ROS-with-Nucleo-board/uros_example:/project --env MICROROS_LIBRARY_FOLDER=micro_ros_stm32cubemx_utils/microros_static_library_ide microros/micro_ros_static_library_builder:humble'
+    ```
+	Note: Replace `<your password>` with your actual Ubuntu sudo password.
 
 - Navigate to `Project -> Settings -> C/C++ Build -> Settings -> Tool Settings Tab -> MCU/MPU GCC Compiler -> Include paths`
 ```bash
@@ -139,7 +187,7 @@ In the `microros_transport` directory, delete all files except for `dma_transpor
 
 Finally, right-click the project and select `Build`. At this point, It will take a while, and the build should complete without any errors.
 
-## Step 8 - Add Micro-ROS Code to main.c
+## Step 10 - Add Micro-ROS Code to main.c
 ### 1. Include Libraries
 ```c
 /* USER CODE BEGIN Includes */
@@ -206,7 +254,7 @@ void subscription_callback(const void *msgin);
 /* USER CODE END PFP */
 ```
 
-### 4. Edit DefaultTask
+### 4. Add Micro-ROS Codew
 ```c
 /* USER CODE BEGIN 0 */
 void timer_callback(rcl_timer_t *timer, int64_t last_call_time) {
@@ -321,22 +369,6 @@ void StartDefaultTask(void *argument) {
 }
 /* USER CODE END 0 */
 ```
-
-### 5. Edit app_freertos.c
-add `__weak` to StartDefaultTask
-```c
-/* USER CODE END Header_StartDefaultTask */
-__weak void StartDefaultTask(void *argument)
-{
-  /* USER CODE BEGIN StartDefaultTask */
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
-  /* USER CODE END StartDefaultTask */
-}
-```
 Then, click `Run` to upload the code to the Nucleo board.
 If you get `warning: _gettimeofday is not implemented and will always fail`, please add the following to `syscalls.c`
 ```c
@@ -349,7 +381,7 @@ int _gettimeofday_r(struct _reent *ptr, struct timeval *tv, void *tz) {
 }
 ```
 
-## Step 9 - Running Micro-ROS
+## Step 11 - Running Micro-ROS
 Grant permission to Docker:
 ```bash
 sudo chmod 666 /var/run/docker.sock
