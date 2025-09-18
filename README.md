@@ -406,6 +406,33 @@ For custom interface, please follow step to create one in [official page](https:
 Once created, copy the entire custom interface package directory into `micro_ros_stm32cubemx_utils/microros_static_library_ide/library_generation/extra_packages`
 Remove the current libmicroros folder to force regeneration `micro_ros_stm32cubemx_utils/microros_static_library_ide/libmicroros/` and rebuild
 
+## Important Warning: ROS_LOCALHOST_ONLY
+
+If you cannot see your micro-ROS topics after starting the agent, check your `ROS_LOCALHOST_ONLY` environment variable.
+
+### The Problem
+When `ROS_LOCALHOST_ONLY=1` is set, it prevents the micro-ROS agent from discovering ROS 2 nodes on the same machine, even though the serial connection works fine.
+
+### Quick Fix
+Check your current setting:
+```bash
+echo $ROS_LOCALHOST_ONLY
+```
+If it returns `1`, disable it:
+```bash
+export ROS_LOCALHOST_ONLY=0
+# OR
+unset ROS_LOCALHOST_ONLY
+```
+### Why This Happens
+- `ROS_LOCALHOST_ONLY=1` restricts DDS communication to localhost only
+- This blocks network discovery between the micro-ROS agent and ROS 2 nodes
+- The agent becomes invisible to the ROS 2 system
+### Additional Checks
+- Ensure both ROS 2 and micro-ROS agent use the same `ROS_DOMAIN_ID`
+- Verify your `RMW_IMPLEMENTATION` is consistent across your system
+Note: This is a common issue that can occur when switching between different ROS 2 network configurations.
+
 ## Documentation
 ### GitHub Repositories:
 - [micro_ros_setup - Humble](https://github.com/micro-ROS/micro_ros_setup/tree/humble)
