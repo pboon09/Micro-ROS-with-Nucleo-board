@@ -402,6 +402,16 @@ If you see `/uros_motor_node` in the list, congratulations! You have successfull
 If nothing appear, press the reset button.
 
 ## Extra
+### Workspace Organization Tip
+When creating a micro-ROS project, it's recommended to organize your workspace properly to avoid build conflicts:
+1. Create a `firmware` folder in your ROS 2 workspace:
+2. Place your STM32 micro-ROS project inside this firmware folder
+3. Create a COLCON_IGNORE file to prevent colcon from trying to build firmware files:
+```bash
+touch COLCON_IGNORE
+```
+This setup prevents colcon build errors when building ROS 2 packages, as it will ignore the firmware directory containing your STM32 project files.
+### Custom Interfaces
 For custom interface, please follow step to create one in [official page](https://docs.ros.org/en/humble/Tutorials/Beginner-Client-Libraries/Custom-ROS2-Interfaces.html) 
 Once created, copy the entire custom interface package directory into `micro_ros_stm32cubemx_utils/microros_static_library_ide/library_generation/extra_packages`
 Remove the current libmicroros folder to force regeneration `micro_ros_stm32cubemx_utils/microros_static_library_ide/libmicroros/` and rebuild
