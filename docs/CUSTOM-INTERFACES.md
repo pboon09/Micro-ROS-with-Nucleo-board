@@ -26,25 +26,36 @@ will disagree on the wire format.
 
 Follow the official tutorial,
 [Creating custom msg and srv files](https://docs.ros.org/en/humble/Tutorials/Beginner-Client-Libraries/Custom-ROS2-Interfaces.html).
-In short, create a package with a `.msg` or `.srv` file.
+In short, create one package that holds both your messages and your services.
 
 ```bash
 cd ~/microros_ws/src           # or your ROS 2 workspace
 ros2 pkg create --build-type ament_cmake my_robot_msgs
 mkdir my_robot_msgs/msg
+mkdir my_robot_msgs/srv
 ```
 
-Write the message fields in `my_robot_msgs/msg/MotorState.msg`.
+A message has a single section. Write the fields in
+`my_robot_msgs/msg/MotorState.msg`.
 ```
 float64[6] data
 uint32     stamp_ms
 ```
 
-Register it in `my_robot_msgs/CMakeLists.txt`.
+A service has a request section and a response section split by `---`. Write
+`my_robot_msgs/srv/SetMode.srv`.
+```
+uint8 mode
+---
+bool success
+```
+
+Register both in `my_robot_msgs/CMakeLists.txt`.
 ```cmake
 find_package(rosidl_default_generators REQUIRED)
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/MotorState.msg"
+  "srv/SetMode.srv"
 )
 ```
 Add the matching lines to `package.xml`.
@@ -53,7 +64,7 @@ Add the matching lines to `package.xml`.
 <member_of_group>rosidl_interface_packages</member_of_group>
 ```
 
-Build and source it so the agent can use the type.
+Build and source it so the agent can use the types.
 ```bash
 cd ~/microros_ws && colcon build --packages-select my_robot_msgs
 source install/local_setup.bash
@@ -69,17 +80,22 @@ uros_example/micro_ros_stm32cubemx_utils/microros_static_library_ide/library_gen
 ```
 
 Force a clean regeneration by deleting the previously built library, so the
-Docker pre-build step rebuilds it with your type included.
+Docker pre-build step rebuilds it with your types included.
 
 ```bash
 rm -rf uros_example/micro_ros_stm32cubemx_utils/microros_static_library_ide/libmicroros/
 ```
 
-Now press the clean button first, then build. In STM32CubeIDE choose
-`Project -> Clean...`, then build the project. The pre-build step regenerates
-`libmicroros` with `my_robot_msgs` compiled in.
+Now clean the project first, then build. In STM32CubeIDE choose **Project** then
+**Clean**, then build the project. The pre-build step regenerates `libmicroros`
+with `my_robot_msgs` compiled in.
 
-## 3. Use it on the device
+## 3. Use a custom message on the device
+
+The C names are the snake_case form of the ROS type. The message
+`my_robot_msgs/msg/MotorState` becomes the header
+`my_robot_msgs/msg/motor_state.h` and the C type
+`my_robot_msgs__msg__MotorState`.
 
 ```c
 #include <my_robot_msgs/msg/motor_state.h>
@@ -91,18 +107,59 @@ rclc_publisher_init_default(&publisher, &node,
     "motor_state");
 ```
 
-The C names are the snake_case form of the ROS type. The type
-`my_robot_msgs/msg/MotorState` becomes the header
-`my_robot_msgs/msg/motor_state.h` and the C type
-`my_robot_msgs__msg__MotorState`.
+## 4. Use a custom service on the device
+
+A service uses `ROSIDL_GET_SRV_TYPE_SUPPORT` and two generated types, one for the
+request and one for the response. The service
+`my_robot_msgs/srv/SetMode` becomes the header `my_robot_msgs/srv/set_mode.h`
+with the types `my_robot_msgs__srv__SetMode_Request` and
+`my_robot_msgs__srv__SetMode_Response`.
+
+```c
+#include <my_robot_msgs/srv/set_mode.h>
+
+rcl_service_t service;
+my_robot_msgs__srv__SetMode_Request  set_mode_req;
+my_robot_msgs__srv__SetMode_Response set_mode_res;
+
+void set_mode_callback(const void *req_in, void *res_out) {
+    const my_robot_msgs__srv__SetMode_Request *request =
+            (const my_robot_msgs__srv__SetMode_Request *) req_in;
+    my_robot_msgs__srv__SetMode_Response *response =
+            (my_robot_msgs__srv__SetMode_Response *) res_out;
+
+    // read request->mode and fill response->success
+    response->success = true;
+}
+```
+
+Create the service after the node, then add it to the executor with its request
+and response buffers.
+
+```c
+rclc_service_init_default(&service, &node,
+    ROSIDL_GET_SRV_TYPE_SUPPORT(my_robot_msgs, srv, SetMode), "set_mode");
+
+rclc_executor_add_service(&executor, &service,
+    &set_mode_req, &set_mode_res, set_mode_callback);
+```
+
+A service is one more executor handle. Raise the handle count in
+`rclc_executor_init` to cover it. The template uses `2` for one timer and one
+subscription, so adding this service makes it `3`.
+
+```c
+rclc_executor_init(&executor, &support.context, 3, &allocator);
+```
 
 ## Troubleshooting
 
 The type is not found at build time. Confirm the package folder is under
 `extra_packages/` and that you deleted `libmicroros/`, then clean and rebuild.
 
-The agent shows the topic but messages are garbage or dropped. The host package
-and the baked-in definition differ. Rebuild both from the same `.msg`.
+The agent shows the topic or service but the data is garbage or dropped. The host
+package and the baked-in definition differ. Rebuild both from the same `.msg` or
+`.srv`.
 
 The build is stuck on a stale library. Delete `libmicroros/` and `Debug/`, then
 clean and build again. The pre-build step only regenerates when the library is

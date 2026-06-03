@@ -43,6 +43,10 @@
 #include <std_msgs/msg/multi_array_layout.h>
 #include <std_msgs/msg/float64_multi_array.h>
 #include <geometry_msgs/msg/twist.h>
+
+#include <my_robot_msgs/msg/motor_state.h>
+#include <my_robot_msgs/srv/set_mode.h>
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
