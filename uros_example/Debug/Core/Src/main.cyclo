@@ -1,7 +1,0 @@
-../Core/Src/main.c:103:6:timer_callback	4
-../Core/Src/main.c:133:6:subscription_callback	1
-../Core/Src/main.c:146:6:StartDefaultTask	2
-../Core/Src/main.c:219:5:main	1
-../Core/Src/main.c:277:6:SystemClock_Config	3
-../Core/Src/main.c:332:6:HAL_TIM_PeriodElapsedCallback	2
-../Core/Src/main.c:350:6:Error_Handler	1

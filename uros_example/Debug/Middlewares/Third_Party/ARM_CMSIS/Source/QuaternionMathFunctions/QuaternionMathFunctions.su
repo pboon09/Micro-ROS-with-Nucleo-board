@@ -1,8 +1,0 @@
-/home/transporter/Micro-ROS-with-Nucleo-board/uros_example/Source/QuaternionMathFunctions/arm_quaternion_norm_f32.c:81:24:arm_quaternion_norm_f32	40	static
-/home/transporter/Micro-ROS-with-Nucleo-board/uros_example/Source/QuaternionMathFunctions/arm_quaternion_inverse_f32.c:88:24:arm_quaternion_inverse_f32	32	static
-/home/transporter/Micro-ROS-with-Nucleo-board/uros_example/Source/QuaternionMathFunctions/arm_quaternion_conjugate_f32.c:79:24:arm_quaternion_conjugate_f32	32	static
-/home/transporter/Micro-ROS-with-Nucleo-board/uros_example/Source/QuaternionMathFunctions/arm_quaternion_normalize_f32.c:81:24:arm_quaternion_normalize_f32	32	static
-/home/transporter/Micro-ROS-with-Nucleo-board/uros_example/Source/QuaternionMathFunctions/arm_quaternion_product_single_f32.c:93:24:arm_quaternion_product_single_f32	24	static
-/home/transporter/Micro-ROS-with-Nucleo-board/uros_example/Source/QuaternionMathFunctions/arm_quaternion_product_f32.c:129:24:arm_quaternion_product_f32	32	static
-/home/transporter/Micro-ROS-with-Nucleo-board/uros_example/Source/QuaternionMathFunctions/arm_quaternion2rotation_f32.c:143:24:arm_quaternion2rotation_f32	104	static
-/home/transporter/Micro-ROS-with-Nucleo-board/uros_example/Source/QuaternionMathFunctions/arm_rotation2quaternion_f32.c:164:24:arm_rotation2quaternion_f32	48	static
