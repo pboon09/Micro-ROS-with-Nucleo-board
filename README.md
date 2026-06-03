@@ -9,7 +9,7 @@ Out of the box the firmware runs a node called `uros_motor_node` with these
 behaviors.
 - It **publishes** `std_msgs/Float64MultiArray` on `robot_pos`.
 - It **subscribes** to `geometry_msgs/Twist` on `cmd_vel`.
-- It uses `ROS_DOMAIN_ID = 99` and an LPUART serial transport at **2000000 baud**.
+- It uses `ROS_DOMAIN_ID = 127` and an LPUART serial transport at **2000000 baud**.
 - It blinks the user LED (LD2) and kicks an independent watchdog (IWDG).
 
 To build from a blank STM32CubeMX project instead, or to understand how every
@@ -39,7 +39,7 @@ The ROS 2 and micro-ROS installation commands are in
 
 ### 1. Get the code and name your project
 ```bash
-git clone <this-repo-url> my_robot_fw
+git clone https://github.com/pboon09/Micro-ROS-with-Nucleo-board.git my_robot_fw
 cd my_robot_fw
 ./rename_project.sh my_robot      # pick any name: letters, digits, underscores
 ```
@@ -48,17 +48,17 @@ and every internal reference, then clears stale build output. It is safe to
 re-run if you want to rename again later.
 
 ### 2. Open in STM32CubeIDE
-Open `File` then `Open Projects from File System...` and select the `my_robot/`
-folder.
+Open **File** then **Open Projects from File System...** and select the
+`my_robot/` folder.
 
 ### 3. Build
-Right-click the project and choose `Build`. The first build runs a pre-build step
-that pulls the `microros/micro_ros_static_library_builder:humble` Docker image
-and compiles the micro-ROS static library into
+Right-click the project and choose **Build**. The first build runs a pre-build
+step that pulls the `microros/micro_ros_static_library_builder:humble` Docker
+image and compiles the micro-ROS static library into
 `my_robot/micro_ros_stm32cubemx_utils/`. This takes a few minutes the first time.
 
 ### 4. Flash
-Click `Run` or `Debug` to upload to the board.
+Click **Run** or **Debug** to upload to the board.
 
 ### 5. Run the micro-ROS agent
 On the host, start the agent against the board's serial port. Match the baud rate
@@ -91,7 +91,7 @@ If nothing appears, press the board's reset button.
 
 - **Agent connects but `ros2 topic list` shows nothing.** Check
   `ROS_LOCALHOST_ONLY`. If it is `1`, run `export ROS_LOCALHOST_ONLY=0`. Make
-  sure ROS 2 and the firmware share the same domain ID, which is 99.
+  sure ROS 2 and the firmware share the same domain ID, which is 127.
 - **Pre-build fails with a Docker permission error.** Your user cannot reach the
   Docker daemon. Redo the `usermod -aG docker` step above, or run `sudo chmod 666
   /var/run/docker.sock` for a one-off session.
@@ -138,4 +138,5 @@ Additional references and acknowledgements are listed at the end of
 [docs/SETUP_FROM_SCRATCH.md](docs/SETUP_FROM_SCRATCH.md).
 
 ## Feedback
-If you have any feedback, please open an issue.
+If you have any feedback, please open an issue on the
+[GitHub repository](https://github.com/pboon09/Micro-ROS-with-Nucleo-board).

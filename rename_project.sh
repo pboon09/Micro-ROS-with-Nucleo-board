@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 #
-# rename_project.sh — turn this template into your own STM32CubeIDE project.
+# rename_project.sh - turn this template into your own STM32CubeIDE project.
 #
 # Usage:
 #   ./rename_project.sh <new_project_name>
 #
-# Renames the CubeIDE project — the folder, the .ioc/.launch files, and every
-# internal reference — from its current name to <new_project_name>, and removes
-# stale build output. Safe to re-run: it detects the current name from the .ioc
+# Renames the CubeIDE project (the folder, the .ioc/.launch files, and every
+# internal reference) from its current name to <new_project_name>, and removes
+# stale build output. Safe to re-run, it detects the current name from the .ioc
 # file, so you can rename again later.
 #
 set -euo pipefail
@@ -32,14 +32,14 @@ fi
 # --- find the current project (the directory containing the single .ioc) ------
 IOC_PATH="$(find "$SCRIPT_DIR" -maxdepth 2 -name '*.ioc' | head -n 1 || true)"
 if [[ -z "$IOC_PATH" ]]; then
-  echo "Error: no .ioc file found under $SCRIPT_DIR — run this from the template root." >&2
+  echo "Error: no .ioc file found under $SCRIPT_DIR. Run this from the template root." >&2
   exit 1
 fi
 PROJECT_DIR="$(dirname "$IOC_PATH")"
 OLD_NAME="$(basename "$IOC_PATH" .ioc)"
 
 if [[ "$OLD_NAME" == "$NEW_NAME" ]]; then
-  echo "Project is already named '$NEW_NAME' — nothing to do."
+  echo "Project is already named '$NEW_NAME', nothing to do."
   exit 0
 fi
 
@@ -72,7 +72,7 @@ echo "  removed  Debug/ and Release/ build output"
 NEW_DIR="$(dirname "$PROJECT_DIR")/$NEW_NAME"
 if [[ "$PROJECT_DIR" != "$NEW_DIR" ]]; then
   if [[ -e "$NEW_DIR" ]]; then
-    echo "Error: '$NEW_DIR' already exists — refusing to overwrite." >&2
+    echo "Error: '$NEW_DIR' already exists, refusing to overwrite." >&2
     exit 1
   fi
   mv "$PROJECT_DIR" "$NEW_DIR"
@@ -86,5 +86,5 @@ Done. Next steps:
      (File > Open Projects from File System... > select the '$NEW_NAME' folder).
   2. Build. The pre-build step pulls the micro-ROS Docker image and regenerates
      the static library into micro_ros_stm32cubemx_utils/.
-  3. Flash the board, then start the agent (see README.md "Run it").
+  3. Flash the board, then start the agent (see README.md, Use the template).
 EOF

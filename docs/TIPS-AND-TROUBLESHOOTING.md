@@ -105,7 +105,7 @@ export ROS_LOCALHOST_ONLY=0   # or run: unset ROS_LOCALHOST_ONLY
 ```
 
 Also confirm both sides share the same `ROS_DOMAIN_ID`, which the firmware sets
-to 99, and a consistent `RMW_IMPLEMENTATION`.
+to 127, and a consistent `RMW_IMPLEMENTATION`.
 
 ### The _gettimeofday warning
 

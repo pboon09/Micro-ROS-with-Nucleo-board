@@ -343,7 +343,7 @@ allocator = rcl_get_default_allocator();
 // create init
 init_options = rcl_get_zero_initialized_init_options();
 RCLSOFTCHECK(rcl_init_options_init(&init_options, allocator));
-RCLSOFTCHECK(rcl_init_options_set_domain_id(&init_options, 99));
+RCLSOFTCHECK(rcl_init_options_set_domain_id(&init_options, 127));
 
 // create support
 rclc_support_init_with_options(&support, 0, NULL, &init_options, &allocator);
