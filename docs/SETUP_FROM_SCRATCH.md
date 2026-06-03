@@ -92,25 +92,17 @@ docker run hello-world   # should succeed without sudo
 
 ## Step 5 - IOC Setup
 ### 1. Create STM32 Project
-`File` -> `New` -> `STM32 Project` -> `Board Selector`
-
-Type your Commercial Part Number for example NUCLEO-F411RE and click `Next`
-
-Complete the project name then click `Finish`
-
-`Initialize all peripherals with their default Mode?` -> `Yes`
-
-`Device Configuration Tool ...` -> `Yes`
+Open **File** then **New** then **STM32 Project**, and pick the **Board Selector**
+tab. Type your Commercial Part Number, for example `NUCLEO-F411RE`, and click
+**Next**. Complete the project name and click **Finish**. When asked
+**Initialize all peripherals with their default Mode?**, click **Yes**. When the
+**Device Configuration Tool** prompt appears, click **Yes**.
 
 ### 2. Setting IOC
-- System Core
-    - RCC
-        - `HSE: Cystal/Ceramic Resonator`
-    - SYS
-        - `Timebase Source: TIM1`
-    - IWDG (Enable if you want auto-reconnect)
-        - `Activated`
-        - `down-counter reload 2499`
+- **System Core**
+    - **RCC**. Set the high speed clock to **Crystal/Ceramic Resonator** (the `HSE` source).
+    - **SYS**. Set **Timebase Source** to **TIM1**.
+    - **IWDG** (enable it if you want auto-reconnect). Set it to **Activated** with a `down-counter reload` of `2499`.
 
 ![RCC](../picture/rcc.png)
 
@@ -118,38 +110,31 @@ Complete the project name then click `Finish`
 
 ![IWDG](../picture/iwdg.png)
 
-- Timers (optional, only if you want a hardware timer like this template's TIM2)
-    - TIM2 `Activated` with `Clock Source: Internal Clock`
-        - In NVIC Settings tab, enable `global interrupt`
-        - Set `Prescaler` and `Counter Period` for the rate you want. This
-          template uses `Prescaler 169` and `Counter Period 999` on a 170 MHz
-          clock, which gives a 1 kHz (1 ms) update interrupt. It is started in
-          `app_freertos.c` (see
-          [Step 10.5](#105-pre-scheduler-init-user-code-begin-init)).
+- **Timers** (optional, only if you want a hardware timer like this template's TIM2)
+    - **TIM2**. Set it to **Activated** and set **Clock Source** to **Internal Clock**.
+        - Open the **NVIC Settings** tab and enable the **global interrupt**.
+        - Set **Prescaler** and **Counter Period** for the rate you want. This template uses `Prescaler 169` and `Counter Period 999` on a 170 MHz clock, which gives a 1 kHz (1 ms) update interrupt. It is started in `app_freertos.c` (see [Step 10.5](#105-pre-scheduler-init-user-code-begin-init)).
 
-- Connectivity
-    - LPUART (Choose preferable baudrate) `Asynchronous`
-        - In DMA Settings tab, click Add
-            - Add RX - `Mode: Circular` `Priority: Very High`
-            - Add TX - `Priority: Very High`
-        - In NVIC Settings tab, click enable `global interrupt`
+- **Connectivity**
+    - **LPUART** in **Asynchronous** mode, with the baud rate you prefer.
+        - Open the **DMA Settings** tab and click **Add** twice. For **RX** set **Mode** to **Circular** and **Priority** to **Very High**. For **TX** set **Priority** to **Very High**.
+        - Open the **NVIC Settings** tab and enable the **global interrupt**.
 
 ![set uart mode](../picture/uart1.png)
 ![set baud rate](../picture/uart2.png)
 ![rx dma](../picture/uart3.png)
 ![tx dma](../picture/uart4.png)
 
-- Middleware
-    - FREERTOS `CMSIS_V2`
-        - Double click `defaultTask`
-            - `Stack Size (Words): 3000`
-        - Make sure the micro-ROS task has more than 10 kB of stack (1 Word = 4 Bytes)
+- **Middleware**
+    - **FREERTOS** with interface **CMSIS_V2**.
+        - Double-click **defaultTask** and set **Stack Size (Words)** to `3000`.
+        - Make sure the micro-ROS task has more than 10 kB of stack (1 Word = 4 Bytes).
 
 ![cmsis](../picture/freertos1.png)
 ![task and queue](../picture/freertos2.png)
 ![edit task](../picture/freertos3.png)
 
-Click `Device Configuration Tool Code Generation` or `Gear Icon`
+Click the gear icon (**Device Configuration Tool Code Generation**) to generate the project.
 
 ## Step 6 - Clone micro_ros_stm32cubemx_utils
 Go to the your project folder in workspace, and then open terminal.
@@ -183,31 +168,36 @@ own repo, see
 The template project already has all of the settings below configured. This step
 is for reproducing them on a fresh project.
 
-- Navigate to `Project -> Settings -> C/C++ Build -> Settings -> Build Steps Tab`
-    - In `Pre-build steps` add the command below. It uses no `sudo` and works for
-      any project name because it expands the `${ProjName}` build variable.
-    ```bash
-    docker pull microros/micro_ros_static_library_builder:humble && docker run --rm -v ${workspace_loc:/${ProjName}}:/project --env MICROROS_LIBRARY_FOLDER=micro_ros_stm32cubemx_utils/microros_static_library_ide microros/micro_ros_static_library_builder:humble
-    ```
-    This requires that your user can run Docker without `sudo` (see Step 4).
-    Never commit your sudo password into the build configuration.
+Open **Project** then **Settings**, then go to **C/C++ Build** then **Settings**.
+The three groups below live under the tabs there.
 
-- Navigate to `Project -> Settings -> C/C++ Build -> Settings -> Tool Settings Tab -> MCU/MPU GCC Compiler -> Include paths`
+On the **Build Steps** tab, in **Pre-build steps**, add the command below. It uses
+no `sudo` and works for any project name because it expands the `${ProjName}`
+build variable.
+```bash
+docker pull microros/micro_ros_static_library_builder:humble && docker run --rm -v ${workspace_loc:/${ProjName}}:/project --env MICROROS_LIBRARY_FOLDER=micro_ros_stm32cubemx_utils/microros_static_library_ide microros/micro_ros_static_library_builder:humble
+```
+This requires that your user can run Docker without `sudo` (see Step 4). Never
+commit your sudo password into the build configuration.
+
+On the **Tool Settings** tab, open **MCU/MPU GCC Compiler** then **Include paths**
+and add this path.
 ```bash
 ../micro_ros_stm32cubemx_utils/microros_static_library_ide/libmicroros/include
 ```
 
-- Navigate to `Project -> Settings -> C/C++ Build -> Settings -> MCU/MPU GCC Linker -> Libraries`
-    - In Libraries (-l)
-    ```bash
-    microros
-    ```
-    - in Library search path (-L)
-    ```bash
-    ../micro_ros_stm32cubemx_utils/microros_static_library_ide/libmicroros
-    ```
+On the **Tool Settings** tab, open **MCU/MPU GCC Linker** then **Libraries**. Add
+`microros` to **Libraries (-l)**.
+```bash
+microros
+```
+Then add this path to **Library search path (-L)**.
+```bash
+../micro_ros_stm32cubemx_utils/microros_static_library_ide/libmicroros
+```
 
-Finally, right-click the project and select `Build`. At this point it will take a while, and the build should complete without any errors.
+Finally, right-click the project and select **Build**. It will take a while, and
+the build should complete without any errors.
 
 ## Step 10 - Add Micro-ROS Code
 With FreeRTOS file separation enabled, STM32CubeMX generates the default task and
