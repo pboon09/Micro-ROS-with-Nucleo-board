@@ -1,142 +1,77 @@
-# Micro-ROS STM32 Nucleo Template
+<div align="center">
 
-A ready-to-build **micro-ROS** firmware template for the **STM32 Nucleo-G474RE**
-board, using FreeRTOS (CMSIS-V2) and an LPUART with DMA serial transport. Clone
-it, rename it to your own project, build, and flash, and you have a working
-micro-ROS node without any blank-project setup.
+# Micro-ROS-with-Nucleo-board
 
-Out of the box the firmware runs a node called `uros_motor_node` with these
-behaviors.
-- It **publishes** `std_msgs/Float64MultiArray` on `robot_pos`.
-- It **subscribes** to `geometry_msgs/Twist` on `cmd_vel`.
-- It uses `ROS_DOMAIN_ID = 127` and an LPUART serial transport at **2000000 baud**.
-- It blinks the user LED (LD2) and kicks an independent watchdog (IWDG).
+![ROS 2](https://img.shields.io/badge/ROS_2-Jazzy_%7C_Humble-22314E?logo=ros&logoColor=white)
+![Board](https://img.shields.io/badge/board-NUCLEO--G474RE-03234B?logo=stmicroelectronics&logoColor=white)
+![RTOS](https://img.shields.io/badge/RTOS-FreeRTOS-8BC34A)
+![IDE](https://img.shields.io/badge/IDE-STM32CubeIDE-03234B?logo=stmicroelectronics&logoColor=white)
+![Build](https://img.shields.io/badge/build-Docker-2496ED?logo=docker&logoColor=white)
 
-To build from a blank STM32CubeMX project instead, or to understand how every
-piece is wired, see [docs/SETUP_FROM_SCRATCH.md](docs/SETUP_FROM_SCRATCH.md).
+</div>
 
----
+## 🤖 About
 
-## Prerequisites
+A script that creates a micro-ROS project for STM32CubeIDE, ready to build and flash.
 
-- Ubuntu 22.04 with **ROS 2 Humble** and the **micro-ROS agent** installed
-- **STM32CubeIDE**
-- **Docker**, runnable without `sudo`, because the build's pre-build step calls
-  Docker. Grant access once with the commands below.
-  ```bash
-  sudo usermod -aG docker $USER
-  newgrp docker            # or log out and back in
-  docker run hello-world   # must succeed without sudo
-  ```
-- A Nucleo-G474RE board and a USB cable
+The template runs the node `uros_motor_node` on FreeRTOS. It publishes `/robot_pos`, subscribes to `/cmd_vel`, and talks to the agent through the ST-Link USB port at 2000000 baud.
 
-The ROS 2 and micro-ROS installation commands are in
-[docs/SETUP_FROM_SCRATCH.md](docs/SETUP_FROM_SCRATCH.md), Steps 1 and 2.
+The example uses ROS domain ID `127`, set in [`app_freertos.c`](uros_example/Core/Src/app_freertos.c#L194). The host must use the same domain ID, so check it before you run anything.
 
----
+## 🚀 Getting Started
 
-## Use the template
+### 1. Install the tools
 
-### 1. Get the code and name your project
+With ROS 2 installed, get the micro-ROS agent, Docker and STM32CubeIDE from [INSTALL.md](docs/INSTALL.md).
+
+### 2. Clone
+
 ```bash
-git clone https://github.com/pboon09/Micro-ROS-with-Nucleo-board.git my_robot_fw
-cd my_robot_fw
-./rename_project.sh my_robot      # pick any name: letters, digits, underscores
+git clone https://github.com/pboon09/Micro-ROS-with-Nucleo-board.git
 ```
-`rename_project.sh` renames the project folder, the `.ioc` and `.launch` files,
-and every internal reference, then clears stale build output. It is safe to
-re-run if you want to rename again later.
 
-### 2. Open in STM32CubeIDE
-Open **File** then **Open Projects from File System...** and select the
-`my_robot/` folder.
+### 3. Create a project
 
-### 3. Build
-Right-click the project and choose **Build**. The first build runs a pre-build
-step that pulls the `microros/micro_ros_static_library_builder:humble` Docker
-image and compiles the micro-ROS static library into
-`my_robot/micro_ros_stm32cubemx_utils/`. This takes a few minutes the first time.
+`create_project.sh` only works for the NUCLEO-G474RE. For any other board, follow [SETUP_FROM_SCRATCH.md](docs/SETUP_FROM_SCRATCH.md).
 
-### 4. Flash
-Click **Run** or **Debug** to upload to the board.
+```bash
+. Micro-ROS-with-Nucleo-board/create_project.sh <workspace> <project_name> <humble|jazzy>
+```
 
-### 5. Run the micro-ROS agent
-On the host, start the agent against the board's serial port. Match the baud rate
-to the firmware, which is 2000000 by default.
+For example, this creates `~/ros2_ws/firmware/my_robot`:
+
+```bash
+~/Micro-ROS-with-Nucleo-board/create_project.sh ~/ros2_ws my_robot jazzy
+```
+
+### 4. Build and flash
+
+Open it in STM32CubeIDE with **File > Open Projects from File System...**, then **Build** and **Run**. The first build takes a few minutes because it compiles the micro-ROS library in Docker.
+
+### 5. Run the agent
+
 ```bash
 ros2 run micro_ros_agent micro_ros_agent serial -b 2000000 --dev /dev/ttyACM0
 ```
-Then confirm the node and topics are visible.
+Expect `/robot_pos` and `/cmd_vel`.
+
 ```bash
-ros2 topic list      # expect /robot_pos and /cmd_vel
-ros2 node list       # expect /uros_motor_node
+ros2 topic list
 ```
-If nothing appears, press the board's reset button.
 
----
+Your code goes in [`Core/Src/app_freertos.c`](uros_example/Core/Src/app_freertos.c).
 
-## Customize it
+## 📚 Guides
 
-| To change | Edit |
+| Guide | For |
 |---|---|
-| Node name, topics, message types, domain ID | the micro-ROS setup in [`uros_example/Core/Src/app_freertos.c`](uros_example/Core/Src/app_freertos.c) (`StartDefaultTask`) |
-| Pre-scheduler init (timers, robot config) | `USER CODE BEGIN Init` in [`app_freertos.c`](uros_example/Core/Src/app_freertos.c) (`MX_FREERTOS_Init`) |
-| Serial baud rate | the LPUART config in the `.ioc` and the agent's `-b` flag |
-| Add custom message or service types | [docs/CUSTOM-INTERFACES.md](docs/CUSTOM-INTERFACES.md) |
-| Add CMSIS-DSP math routines | [docs/CMSIS-DSP.md](docs/CMSIS-DSP.md) |
+| [INSTALL.md](docs/INSTALL.md) | Installing the agent, Docker and STM32CubeIDE |
+| [SERVICES.md](docs/SERVICES.md) | A service server or client on the board |
+| [CUSTOM_INTERFACES.md](docs/CUSTOM_INTERFACES.md) | Your own `.msg` and `.srv` types |
+| [CMSIS_DSP.md](docs/CMSIS_DSP.md) | ARM's math library |
+| [TIPS_AND_TROUBLESHOOTING.md](docs/TIPS_AND_TROUBLESHOOTING.md) | Git setup and common problems |
+| [SETUP_FROM_SCRATCH.md](docs/SETUP_FROM_SCRATCH.md) | Building the same project from a blank CubeMX project |
 
----
+## 🙏 Credits
 
-## Troubleshooting
-
-- **Agent connects but `ros2 topic list` shows nothing.** Check
-  `ROS_LOCALHOST_ONLY`. If it is `1`, run `export ROS_LOCALHOST_ONLY=0`. Make
-  sure ROS 2 and the firmware share the same domain ID, which is 127.
-- **Pre-build fails with a Docker permission error.** Your user cannot reach the
-  Docker daemon. Redo the `usermod -aG docker` step above, or run `sudo chmod 666
-  /var/run/docker.sock` for a one-off session.
-- **The build prints `warning: _gettimeofday is not implemented`.** Add the
-  `_gettimeofday_r` stub from
-  [docs/TIPS-AND-TROUBLESHOOTING.md](docs/TIPS-AND-TROUBLESHOOTING.md).
-
-Full explanations and more fixes are in
-[docs/TIPS-AND-TROUBLESHOOTING.md](docs/TIPS-AND-TROUBLESHOOTING.md).
-
----
-
-## Documentation
-
-| Guide | Read it for |
-|---|---|
-| [docs/SETUP_FROM_SCRATCH.md](docs/SETUP_FROM_SCRATCH.md) | Building the whole project from a blank STM32CubeMX project, step by step |
-| [docs/CMSIS-DSP.md](docs/CMSIS-DSP.md) | Adding ARM's CMSIS-DSP math library (optional) |
-| [docs/CUSTOM-INTERFACES.md](docs/CUSTOM-INTERFACES.md) | Creating custom messages and services and baking them into `libmicroros` |
-| [docs/TIPS-AND-TROUBLESHOOTING.md](docs/TIPS-AND-TROUBLESHOOTING.md) | Git ignore rules, workspace layout, Docker, and common runtime fixes |
-
----
-
-## Repository layout
-
-```
-.
-├── README.md                         # this file, how to use the template
-├── rename_project.sh                 # one-shot project renamer
-├── docs/
-│   ├── SETUP_FROM_SCRATCH.md         # full build-it-yourself walkthrough
-│   ├── CMSIS-DSP.md                  # optional ARM DSP math library
-│   ├── CUSTOM-INTERFACES.md          # custom messages and services
-│   └── TIPS-AND-TROUBLESHOOTING.md   # git, workspace, common fixes
-├── CMSIS/                            # CMSIS packs and install manual (optional DSP use)
-├── picture/                          # screenshots referenced by the from-scratch guide
-└── uros_example/                     # the STM32CubeIDE project (renamed by the script)
-```
-
-## Credits
-
-Built on the official [micro_ros_stm32cubemx_utils](https://github.com/micro-ROS/micro_ros_stm32cubemx_utils/tree/humble).
-Additional references and acknowledgements are listed at the end of
-[docs/SETUP_FROM_SCRATCH.md](docs/SETUP_FROM_SCRATCH.md).
-
-## Feedback
-If you have any feedback, please open an issue on the
-[GitHub repository](https://github.com/pboon09/Micro-ROS-with-Nucleo-board).
+Built on [micro_ros_stm32cubemx_utils](https://github.com/micro-ROS/micro_ros_stm32cubemx_utils).

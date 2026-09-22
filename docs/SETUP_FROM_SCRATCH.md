@@ -1,234 +1,107 @@
-# Setting up Micro-ROS on a Nucleo board from scratch
+# Setup from scratch
 
-This guide walks through creating a Micro-ROS STM32 project from a blank
-STM32CubeMX project. It covers installing the tooling, configuring the `.ioc`,
-wiring in the micro-ROS utilities, and writing the application code.
+How to build the template yourself, starting from a blank CubeMX project. The result matches [`uros_example/`](../uros_example). If you only want a working project, use [`create_project.sh`](../create_project.sh) from the [README](../README.md) instead.
 
-## Table of Contents
-- [Requirement](#requirement)
-- [About choosing UART](#about-choosing-uart)
-- [Step 1 - Install ROS 2](#step-1---install-ros-2)
-- [Step 2 - Install Micro-ROS](#step-2---install-micro-ros)
-- [Step 3 - Download STM32CubeIDE](#step-3---download-stm32cubeide)
-- [Step 4 - Download Docker](#step-4---download-docker)
-- [Step 5 - IOC Setup](#step-5---ioc-setup)
-- [Step 6 - Clone micro\_ros\_stm32cubemx\_utils](#step-6---clone-micro_ros_stm32cubemx_utils)
-- [Step 7 - CMSIS-DSP](#step-7---cmsis-dsp)
-- [Step 8 - About Git](#step-8---about-git)
-- [Step 9 - Setting Project's Properties](#step-9---setting-projects-properties)
-- [Step 10 - Add Micro-ROS Code](#step-10---add-micro-ros-code)
-- [Step 11 - Running Micro-ROS](#step-11---running-micro-ros)
-- [Related guides](#related-guides)
-- [Documentation](#documentation)
+## Contents
 
-Focused topics live in their own guides. See [CMSIS-DSP](CMSIS-DSP.md),
-[Custom interfaces](CUSTOM-INTERFACES.md), and
-[Tips and troubleshooting](TIPS-AND-TROUBLESHOOTING.md).
+- [1. Install the tools](#1-install-the-tools)
+- [2. Create the project](#2-create-the-project)
+- [3. Configure the .ioc](#3-configure-the-ioc)
+- [4. Add micro_ros_stm32cubemx_utils](#4-add-micro_ros_stm32cubemx_utils)
+- [5. Project settings](#5-project-settings)
+- [6. Add the micro-ROS code](#6-add-the-micro-ros-code)
+- [7. Build and run](#7-build-and-run)
+- [References](#references)
 
-## Requirement
-Before starting, make sure you have the following.
-- A computer with Ubuntu 22.04.4 LTS
-- ROS2 installed
-- Micro-ROS installed
-- STM32CubeIDE installed
-- Docker installed
-- A USB cable to connect the Nucleo board to your computer
-- Nucleo Board
+## 1. Install the tools
 
-## About choosing UART
-You need the UART that is wired to the ST-Link Virtual COM Port (VCP). Only one
-UART on the board reaches the ST-Link USB connector, and that is the one the
-agent talks to over the serial cable. Check your board user manual to find it.
-For our example board, the Nucleo-G474RE
-([UM2505](https://www.st.com/resource/en/user_manual/um2505-stm32g4-nucleo64-boards-mb1367-stmicroelectronics.pdf)),
-it is **LPUART1**.
+Install ROS 2, then follow [INSTALL.md](INSTALL.md) for the micro-ROS agent, Docker and STM32CubeIDE.
 
-## Step 1 - Install ROS 2
-To get started, you'll need to install ROS 2 on your system. For this guide, we are using the ROS 2 Humble distribution. Follow the official ROS 2 installation guide for Ubuntu by clicking [here](https://docs.ros.org/en/humble/Installation/Ubuntu-Install-Debs.html).
+## 2. Create the project
 
-## Step 2 - Install Micro-ROS
-To set up Micro-ROS, visit the [official Micro-ROS tutorial](https://micro.ros.org/docs/tutorials/core/first_application_linux/) and follow the guide to get started.
+In STM32CubeIDE, go to **File > New > STM32 Project**, open the **Board Selector** tab and pick your board, for example `NUCLEO-G474RE`. Save the project under `~/ros2_ws/firmware/`. Answer **Yes** to both prompts.
+
+Keep colcon from treating the firmware as a ROS package:
+
 ```bash
-mkdir microros_ws
-cd microros_ws
-
-git clone -b $ROS_DISTRO https://github.com/micro-ROS/micro_ros_setup.git src/micro_ros_setup
-
-sudo apt update && rosdep update
-rosdep install --from-paths src --ignore-src -y
-
-colcon build
-source install/local_setup.bash
-
-ros2 run micro_ros_setup create_firmware_ws.sh host
-ros2 run micro_ros_setup build_firmware.sh
-source install/local_setup.bash
-
-ros2 run micro_ros_setup create_agent_ws.sh
-ros2 run micro_ros_setup build_agent.sh
-source install/local_setup.bash
-```
-To verify, please run the following.
-```bash
-ros2 run micro_ros_demos_rclc int32_publisher
-ros2 topic list
+touch ~/ros2_ws/firmware/COLCON_IGNORE
 ```
 
-## Step 3 - Download STM32CubeIDE
-Visit this youtube video [Install STM32CUBEIDE on Linux(UBUNTU) by Embedded Icon
-](https://youtu.be/j3P2rsB_-BY?si=XfH9ioiwhtgmfos6) and follow the guide to install the STM32CubeIDE.
+## 3. Configure the .ioc
 
-## Step 4 - Download Docker
-Visit this youtube video [How to Install Docker on Ubuntu: A Step-By-Step Guide
- by vCloudBitsBytes](https://www.youtube.com/watch?v=cqbh-RneBlk) and follow the guide to install the Docker.
+The agent talks to the board over the UART wired to the ST-Link USB port. On the Nucleo-G474RE that is **LPUART1** ([UM2505](https://www.st.com/resource/en/user_manual/um2505-stm32g4-nucleo64-boards-mb1367-stmicroelectronics.pdf)). On another board, check its user manual.
 
-After installing Docker, allow your user to run Docker without `sudo` so the
-STM32CubeIDE pre-build step works.
-```bash
-sudo usermod -aG docker $USER
-newgrp docker   # or log out and back in
-docker run hello-world   # should succeed without sudo
-```
+| Peripheral | Setting |
+|---|---|
+| RCC | High Speed Clock: **Crystal/Ceramic Resonator** |
+| SYS | Timebase Source: **TIM1** |
+| IWDG | Activated, prescaler `4`, window `4095`, reload `4095` |
+| TIM2 | Activated, Clock Source **Internal Clock**, Prescaler `169`, Counter Period `999`, NVIC global interrupt on |
+| LPUART1 | **Asynchronous**, `2000000` baud, NVIC global interrupt on |
+| LPUART1 DMA | RX: **Circular**, **Very High**. TX: **Very High** |
+| FREERTOS | Interface **CMSIS_V2**, defaultTask stack `3000` words, `TOTAL_HEAP_SIZE` `3072` |
 
-## Step 5 - IOC Setup
-### 1. Create STM32 Project
-Open **File** then **New** then **STM32 Project**, and pick the **Board Selector**
-tab. Type your Commercial Part Number, for example `NUCLEO-F411RE`, and click
-**Next**. Complete the project name and click **Finish**. When asked
-**Initialize all peripherals with their default Mode?**, click **Yes**. When the
-**Device Configuration Tool** prompt appears, click **Yes**.
-
-### 2. Setting IOC
-- **System Core**
-    - **RCC**. Set the high speed clock to **Crystal/Ceramic Resonator** (the `HSE` source).
-    - **SYS**. Set **Timebase Source** to **TIM1**.
-    - **IWDG** (enable it if you want auto-reconnect). Set it to **Activated** with a `down-counter reload` of `2499`.
+TIM2 with those values gives a 1 kHz interrupt on the 170 MHz clock. The IWDG screenshot shows reload `2499`, but use `4095`.
 
 ![RCC](../picture/rcc.png)
-
 ![SYS](../picture/sys.png)
-
 ![IWDG](../picture/iwdg.png)
-
-- **Timers** (optional, only if you want a hardware timer like this template's TIM2)
-    - **TIM2**. Set it to **Activated** and set **Clock Source** to **Internal Clock**.
-        - Open the **NVIC Settings** tab and enable the **global interrupt**.
-        - Set **Prescaler** and **Counter Period** for the rate you want. This template uses `Prescaler 169` and `Counter Period 999` on a 170 MHz clock, which gives a 1 kHz (1 ms) update interrupt. It is started in `app_freertos.c` (see [Step 10.5](#105-pre-scheduler-init-user-code-begin-init)).
-
-- **Connectivity**
-    - **LPUART** in **Asynchronous** mode, with the baud rate you prefer.
-        - Open the **DMA Settings** tab and click **Add** twice. For **RX** set **Mode** to **Circular** and **Priority** to **Very High**. For **TX** set **Priority** to **Very High**.
-        - Open the **NVIC Settings** tab and enable the **global interrupt**.
-
 ![set uart mode](../picture/uart1.png)
 ![set baud rate](../picture/uart2.png)
 ![rx dma](../picture/uart3.png)
 ![tx dma](../picture/uart4.png)
-
-- **Middleware**
-    - **FREERTOS** with interface **CMSIS_V2**.
-        - Double-click **defaultTask** and set **Stack Size (Words)** to `3000`.
-        - Make sure the micro-ROS task has more than 10 kB of stack (1 Word = 4 Bytes).
-
 ![cmsis](../picture/freertos1.png)
 ![task and queue](../picture/freertos2.png)
 ![edit task](../picture/freertos3.png)
 
-Click the gear icon (**Device Configuration Tool Code Generation**) to generate the project.
+Click the gear icon to generate the code.
 
-## Step 6 - Clone micro_ros_stm32cubemx_utils
-Go to the your project folder in workspace, and then open terminal.
+## 4. Add micro_ros_stm32cubemx_utils
+
+Run these from the project folder. Use the branch that matches your ROS 2.
+
 ```bash
-git clone https://github.com/micro-ROS/micro_ros_stm32cubemx_utils.git
-cd micro_ros_stm32cubemx_utils
-git checkout humble
-git branch
+git clone -b $ROS_DISTRO https://github.com/micro-ROS/micro_ros_stm32cubemx_utils.git
 ```
-Next, copy the content from the `extra_sources` folder and paste it into the `core -> src` directory.
 
-In the `microros_transport` directory, delete all files except for `dma_transport.c`.
+Copy the extra sources, then keep only the DMA transport:
 
-## Step 7 - CMSIS-DSP
-If you want ARM's optimized math library (filters, matrices, transforms) on the
-Cortex-M4F, see the dedicated [CMSIS-DSP guide](CMSIS-DSP.md). It covers the
-installable packs in the [`CMSIS/`](../CMSIS) folder, the library already
-vendored in the template, and how to use it in code. CMSIS-DSP is optional, so
-skip this step if you do not need it.
-
-## Step 8 - About Git
-Keep regenerable build output (`Debug/`, `Release/`, the generated `libmicroros/`)
-out of version control. A ready-made [.gitignore](../uros_example/.gitignore) is
-already included. For the exact ignore rules, how to untrack or delete files that
-were committed before, and how to vendor `micro_ros_stm32cubemx_utils` into your
-own repo, see
-[Tips and troubleshooting](TIPS-AND-TROUBLESHOOTING.md#git-ignore-rules).
-
-## Step 9 - Setting Project's Properties
-
-The template project already has all of the settings below configured. This step
-is for reproducing them on a fresh project.
-
-Open **Project** then **Settings**, then go to **C/C++ Build** then **Settings**.
-The three groups below live under the tabs there.
-
-On the **Build Steps** tab, in **Pre-build steps**, add the command below. It uses
-no `sudo` and works for any project name because it expands the `${ProjName}`
-build variable.
 ```bash
+cp -r micro_ros_stm32cubemx_utils/extra_sources/* Core/Src/
+find Core/Src/microros_transports -type f ! -name dma_transport.c -delete
+```
+
+## 5. Project settings
+
+Open **Project > Properties > C/C++ Build > Settings**.
+
+**Build Steps > Pre-build steps**. Replace `humble` with `jazzy` twice if you use Jazzy.
+
+```text
 docker pull microros/micro_ros_static_library_builder:humble && docker run --rm -v ${workspace_loc:/${ProjName}}:/project --env MICROROS_LIBRARY_FOLDER=micro_ros_stm32cubemx_utils/microros_static_library_ide microros/micro_ros_static_library_builder:humble
 ```
-This requires that your user can run Docker without `sudo` (see Step 4). Never
-commit your sudo password into the build configuration.
 
-On the **Tool Settings** tab, open **MCU/MPU GCC Compiler** then **Include paths**
-and add this path.
-```bash
-../micro_ros_stm32cubemx_utils/microros_static_library_ide/libmicroros/include
-```
+| Tab | Field | Value |
+|---|---|---|
+| MCU/MPU GCC Compiler > Include paths | Include paths | `../micro_ros_stm32cubemx_utils/microros_static_library_ide/libmicroros/include` |
+| MCU/MPU GCC Linker > Libraries | Libraries (-l) | `microros` |
+| MCU/MPU GCC Linker > Libraries | Library search path (-L) | `../micro_ros_stm32cubemx_utils/microros_static_library_ide/libmicroros` |
 
-On the **Tool Settings** tab, open **MCU/MPU GCC Linker** then **Libraries**. Add
-`microros` to **Libraries (-l)**.
-```bash
-microros
-```
-Then add this path to **Library search path (-L)**.
-```bash
-../micro_ros_stm32cubemx_utils/microros_static_library_ide/libmicroros
-```
+Build once. The first build compiles the micro-ROS library in Docker and takes a few minutes.
 
-Finally, right-click the project and select **Build**. It will take a while, and
-the build should complete without any errors.
+## 6. Add the micro-ROS code
 
-## Step 10 - Add Micro-ROS Code
-With FreeRTOS file separation enabled, STM32CubeMX generates the default task and
-`MX_FREERTOS_Init()` in
-[`Core/Src/app_freertos.c`](../uros_example/Core/Src/app_freertos.c).
-**Put all micro-ROS code there, not in `main.c`.** There are three reasons.
-`main.c` holds only the generated hardware bring-up, so keeping the application
-in `app_freertos.c` matches CubeMX's intended layout. It also keeps `main.c`
-clean across `.ioc` regenerations. Most important, the executor spin has to live
-inside the FreeRTOS task, which CubeMX generates in `app_freertos.c`. Each
-snippet below names the exact `USER CODE` block in `app_freertos.c` it belongs
-to.
+All micro-ROS code goes in [`Core/Src/app_freertos.c`](../uros_example/Core/Src/app_freertos.c), inside the `USER CODE` blocks so it survives code generation. The finished file is [`uros_example/Core/Src/app_freertos.c`](../uros_example/Core/Src/app_freertos.c).
 
-### 10.1 Make the main.c timer callback weak
-`app_freertos.c` defines its own `HAL_TIM_PeriodElapsedCallback` (step 10.7
-below). The HAL also generates a default `HAL_TIM_PeriodElapsedCallback` in
-`main.c`. Mark that one `__weak` so the linker uses your strong version instead
-of failing on a duplicate symbol.
+### main.c
+
+`app_freertos.c` defines its own `HAL_TIM_PeriodElapsedCallback`, so mark the one in [`main.c`](../uros_example/Core/Src/main.c) as `__weak`. This line is outside the `USER CODE` blocks, so check it again after every code generation.
 
 ```c
-/* Core/Src/main.c */
 __weak void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
-{
-    /* ... generated body ... */
-}
 ```
 
-### 10.2 Include libraries (USER CODE BEGIN Includes)
-The task uses the LPUART, IWDG, TIM, GPIO and DMA handles. In the single-file
-layout those are visible from `main.c`. In `app_freertos.c` you must include
-their headers explicitly, in addition to the micro-ROS headers.
+### Includes
 
 ```c
 /* USER CODE BEGIN Includes */
@@ -253,16 +126,14 @@ their headers explicitly, in addition to the micro-ROS headers.
 /* USER CODE END Includes */
 ```
 
-### 10.3 Macro and variables (USER CODE BEGIN PM and Variables)
-In `app_freertos.c` the variable block is named `USER CODE BEGIN Variables` and
-the prototype block is named `USER CODE BEGIN FunctionPrototypes`. These names
-differ from `main.c`, which uses `PV` and `PFP`.
+### Macro and variables
 
 ```c
 /* USER CODE BEGIN PM */
 #define RCLSOFTCHECK(fn) if (fn!= RCL_RET_OK){};
 /* USER CODE END PM */
 ```
+
 ```c
 /* USER CODE BEGIN Variables */
 rcl_node_t node;
@@ -285,7 +156,8 @@ float linear_x, linear_y, linear_z, angular_x, angular_y, angular_z;
 /* USER CODE END Variables */
 ```
 
-### 10.4 Function prototypes (USER CODE BEGIN FunctionPrototypes)
+### Function prototypes
+
 ```c
 /* USER CODE BEGIN FunctionPrototypes */
 bool cubemx_transport_open(struct uxrCustomTransport *transport);
@@ -306,22 +178,19 @@ void subscription_callback(const void *msgin);
 /* USER CODE END FunctionPrototypes */
 ```
 
-### 10.5 Pre-scheduler init (USER CODE BEGIN Init)
-Start anything the application needs before the scheduler runs. This block lives
-inside `MX_FREERTOS_Init`. The template starts the TIM2 timer with its update
-interrupt. Enable TIM2 in the `.ioc` first (see [Step 5](#step-5---ioc-setup)).
+### Init
+
+Start TIM2 before the scheduler runs.
 
 ```c
 /* USER CODE BEGIN Init */
-// Add init here eg. Robot Config
 HAL_TIM_Base_Start_IT(&htim2);
 /* USER CODE END Init */
 ```
 
-### 10.6 micro-ROS bring-up and spin (USER CODE BEGIN StartDefaultTask)
-The body of the generated `StartDefaultTask` sets up the transport and
-allocators, creates the node, publisher, subscriber, timer and executor, then
-spins. The call to `rclc_executor_spin` never returns.
+### Default task
+
+Sets up the transport and allocators, creates the node, publisher, subscriber and timer, then spins forever.
 
 ```c
 /* USER CODE BEGIN StartDefaultTask */
@@ -393,13 +262,9 @@ for (;;) {
 /* USER CODE END StartDefaultTask */
 ```
 
-### 10.7 Callbacks (USER CODE BEGIN Application)
-The timer and subscription callbacks plus the timer-interrupt callback go in the
-application section. The `HAL_TIM_PeriodElapsedCallback` here is the strong
-definition that overrides the weak one from
-[step 10.1](#101-make-the-mainc-timer-callback-weak). It forwards TIM1 to
-`HAL_IncTick()` for the HAL time base and gives you a TIM2 hook that runs at the
-1 kHz rate set in Step 5.
+### Callbacks
+
+The timer publishes and feeds the watchdog. The subscription stores `/cmd_vel`. TIM1 drives the HAL tick, and TIM2 gives you a 1 kHz hook.
 
 ```c
 /* USER CODE BEGIN Application */
@@ -462,51 +327,31 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 /* USER CODE END Application */
 ```
 
-Then build and click `Run` to upload to the board. If you get
-`warning: _gettimeofday is not implemented and will always fail`, add the
-`_gettimeofday_r` stub from
-[Tips and troubleshooting](TIPS-AND-TROUBLESHOOTING.md#the-_gettimeofday-warning).
+## 7. Build and run
 
-## Step 11 - Running Micro-ROS
-If the build's Docker pre-build step hit a permission error, see
-[Docker permissions](TIPS-AND-TROUBLESHOOTING.md#docker-permissions).
+Build, then **Run** to flash. If you get a `_gettimeofday` warning, see [TIPS_AND_TROUBLESHOOTING.md](TIPS_AND_TROUBLESHOOTING.md#troubleshooting).
 
-Run the Micro-ROS Agent and change the baud rate to match your configuration.
+Start the agent, then press the reset button on the board.
+
 ```bash
 ros2 run micro_ros_agent micro_ros_agent serial -b 2000000 --dev /dev/ttyACM0
 ```
 
-Check if the agent is running successfully.
+Check from another terminal. Expect `/uros_motor_node`, then `/robot_pos` and `/cmd_vel`.
+
 ```bash
-ros2 topic list
+ros2 node list && ros2 topic list
 ```
 
-If you see `/uros_motor_node` in the list, congratulations. You have
-successfully installed Micro-ROS on the Nucleo board.
+Next: [CMSIS_DSP.md](CMSIS_DSP.md) for math, [TIPS_AND_TROUBLESHOOTING.md](TIPS_AND_TROUBLESHOOTING.md) for git setup.
 
-If nothing appears, press the reset button.
+## References
 
-## Related guides
-These topics have their own focused guides.
+- [micro_ros_setup](https://github.com/micro-ROS/micro_ros_setup)
+- [micro_ros_stm32cubemx_utils](https://github.com/micro-ROS/micro_ros_stm32cubemx_utils)
+- [micro_ros_arduino](https://github.com/micro-ROS/micro_ros_arduino)
 
-| Guide | Covers |
-|---|---|
-| [CMSIS-DSP](CMSIS-DSP.md) | Installing the CMSIS packs, the vendored DSP library, using it in code |
-| [Custom interfaces](CUSTOM-INTERFACES.md) | Creating custom messages and services and baking them into `libmicroros` |
-| [Tips and troubleshooting](TIPS-AND-TROUBLESHOOTING.md) | Git ignore rules, workspace organization (`COLCON_IGNORE`), Docker permissions, `ROS_LOCALHOST_ONLY`, the `_gettimeofday` warning |
-
-## Documentation
-### GitHub Repositories
-- [micro_ros_setup - Humble](https://github.com/micro-ROS/micro_ros_setup/tree/humble)
-- [micro_ros_stm32cubemx_utils - Humble](https://github.com/micro-ROS/micro_ros_stm32cubemx_utils/tree/humble)
-- [micro_ros_arduino](https://github.com/micro-ROS/micro_ros_arduino/tree/humble)
-
-### Installations
-- [Install STM32CUBEIDE on Linux (Ubuntu) by Embedded Icon](https://youtu.be/j3P2rsB_-BY?si=XfH9ioiwhtgmfos6)
-- [How to Install Docker on Ubuntu: A Step-By-Step Guide by vCloudBitsBytes](https://www.youtube.com/watch?v=cqbh-RneBlk)
-
-### Special Thanks
-Thanks to the following videos that have helped me reach this point.
+Thanks to these videos:
 
 - [How to Set Up Micro-ROS on Any STM32 Microcontroller by Robotics in a Nutshell](https://www.youtube.com/watch?v=xbWaHARjSmk)
 - [Micro-ROS STM32 with STM32CubeIDE by Sokheng Din](https://www.youtube.com/watch?v=bn-P3fxtTF4)
